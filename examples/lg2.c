@@ -48,6 +48,7 @@ struct {
 	{ "submodule",    lg2_submodule,    1 },
 	{ "tag",          lg2_tag,          1 },
 	{ "version",      lg2_version,      0 },
+	{ "worktree",     lg2_worktree,     1 },
 	{ "help",         lg2_help,         0 },
 };
 
