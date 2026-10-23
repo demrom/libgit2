@@ -20,13 +20,13 @@ unzip -oq .build/deps/openssl-frameworks.zip -d .build/deps/openssl-frameworks
 for platform in iphoneos iphonesimulator; do
 	if [ "$platform" = iphoneos ]; then
 		arch=arm64
-		triple=arm64-apple-ios14.0
+		link_flags=(-target arm64-apple-ios14.0)
 		dependency_slice=ios-arm64
 		ssh_slice=ios-arm64_arm64e
 		ssl_platform=iPhoneOS
 	else
-		arch=x86_64
-		triple=x86_64-apple-ios14.0-simulator
+		arch="arm64;x86_64"
+		link_flags=(-arch arm64 -arch x86_64 -mios-simulator-version-min=14.0)
 		dependency_slice=ios-arm64_x86_64-simulator
 		ssh_slice=$dependency_slice
 		ssl_platform=iPhoneSimulator
@@ -50,7 +50,7 @@ for platform in iphoneos iphonesimulator; do
 		-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 -DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_OSX_SYSROOT="$sdk" \
 		-DCMAKE_C_COMPILER="$(xcrun --sdk "$platform" -f clang)" \
-		-DCMAKE_C_FLAGS="-target $triple -I$source_dir/.build/deps" \
+		-DCMAKE_C_FLAGS="-I$source_dir/.build/deps" \
 		-DCMAKE_EXE_LINKER_FLAGS="-F$frameworks_dir -framework ios_system" \
 		-DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
 	cmake --build "build-$platform" --target lg2 --parallel 3
@@ -58,7 +58,7 @@ for platform in iphoneos iphonesimulator; do
 	framework_dir=".build/Release-$platform/lg2.framework"
 	rm -rf "$framework_dir"
 	mkdir -p "$framework_dir"
-	xcrun --sdk "$platform" clang -target "$triple" -dynamiclib -isysroot "$sdk" \
+	xcrun --sdk "$platform" clang "${link_flags[@]}" -dynamiclib -isysroot "$sdk" \
 		-F"$frameworks_dir" build-"$platform"/examples/CMakeFiles/lg2.dir/*.c.o \
 		build-"$platform"/libgit2.a -lpthread -framework CoreFoundation -framework Security \
 		-framework libssh2 -framework openssl -framework ios_system -liconv -lz \

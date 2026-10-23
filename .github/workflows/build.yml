@@ -39,8 +39,9 @@ jobs:
             echo '| xcframework | slice | archs |'
             echo '| --- | --- | --- |'
             for xcf in .build/*.xcframework; do
-              [ -d "$xcf/ios-arm64" ] || exit 1
-              ls -d "$xcf"/ios-*-simulator >/dev/null
+              plutil -convert json -o - "$xcf/Info.plist" | jq -e '
+                [.AvailableLibraries[] | {id: .LibraryIdentifier, archs: (.SupportedArchitectures | sort)}] | sort_by(.id) ==
+                [{id: "ios-arm64", archs: ["arm64"]}, {id: "ios-arm64_x86_64-simulator", archs: ["arm64", "x86_64"]}]' >/dev/null
               plutil -convert json -o - "$xcf/Info.plist" | jq -r \
                 '.AvailableLibraries[] | [.LibraryIdentifier, .LibraryPath, (.SupportedArchitectures | sort | join(" "))] | @tsv' \
                 | while IFS=$'\t' read -r slice lib expected; do
